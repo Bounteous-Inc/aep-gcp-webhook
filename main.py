@@ -1,3 +1,4 @@
+from logging import exception
 import functions_framework
 from google.cloud import bigquery
 import json
@@ -53,8 +54,8 @@ def webhook(request):
         
 def _get_access_token(sandbox_name):
     
-    credentials_file = os.path.join(".credentials", "credentials.json")
-    private_key_file = os.path.join(".credentials", "private.key")
+    credentials_file = os.path.join(".credentials", "config", "credentials.json")
+    private_key_file = os.path.join(".credentials", "config", "private.key")
     with open(credentials_file) as f:
         creds = json.load(f)
 
@@ -97,9 +98,12 @@ def _get_access_token(sandbox_name):
 
     response = requests.post(url, data=accessTokenPayload)
     result = json.loads(response.text)
-    creds['ACCESS_TOKEN'] = result['access_token']
-    ##Put the sandbox name in the cred dict for easier access later
-    creds['SANDBOX'] = sandbox_name
+    if response.status_code == 200:
+        creds['ACCESS_TOKEN'] = result['access_token']
+        ##Put the sandbox name in the cred dict for easier access later
+        creds['SANDBOX'] = sandbox_name
+    else:
+        raise ValueError(f"unable to retrieve access token: {response.text}")
 
     return creds
 
