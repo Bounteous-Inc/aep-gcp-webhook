@@ -1,3 +1,5 @@
 .credentials
 venv
 __pycache__
+*parquet
+.gcloudignore

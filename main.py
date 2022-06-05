@@ -6,6 +6,7 @@ import jwt #pyjwt
 import requests
 import os.path
 import datetime
+import urllib 
 
 @functions_framework.http
 def webhook(request):
@@ -108,7 +109,7 @@ def _get_access_token(sandbox_name):
     return creds
 
 def _download_batch_data_files(creds, batch_id):
-    GCS_STORAGE = "somebucket"
+    GCS_STORAGE_BUCKET = "aep-webhook-poc"
 
     url = f"https://platform.adobe.io/data/foundation/export/batches/{batch_id}/files"
  
@@ -191,6 +192,9 @@ def _download_batch_data_files(creds, batch_id):
 
                     url = file_path_href
 
+                    # parse the filename from the href, the filename is in the path qs
+                    filename = urllib.parse.parse_qs(urllib.parse.urlparse(file_path_href).query)['path'][0]
+
                     payload={}
                     headers = {
                         'Accept': 'application/json, application/octet-stream',
@@ -201,5 +205,10 @@ def _download_batch_data_files(creds, batch_id):
                     }
                     response = requests.request("GET", url, headers=headers, data=payload)
  
-                    ##This is the actual parquet file that needs to be written to gcs
-                    ##print(response.content)
+                    print(f"retrieving file status code: {response.status_code}")
+
+                    base_path = "\tmp"
+
+                    with open(os.path.join(base_path,filename), "wb") as f:
+                        f.write(response.content)
+
