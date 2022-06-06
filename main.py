@@ -1,10 +1,11 @@
 from logging import exception
 import functions_framework
 from google.cloud import bigquery
+from google.cloud import storage
 import json
 import jwt #pyjwt
 import requests
-import os.path
+import os
 import datetime
 import urllib 
 
@@ -38,9 +39,9 @@ def webhook(request):
             print(errors)
 
         if row.get("event_code") == "ing_load_success":
-            credentials = _get_access_token(row.get("sandbox_name"))
+            credentials =  _get_access_token(row.get("sandbox_name"))
             _download_batch_data_files(credentials, row.get("batch_id"))
-
+            
         return(event, 200, None)
     else:
         request_json = request.get_json(silent=True)
@@ -110,6 +111,7 @@ def _get_access_token(sandbox_name):
 
 def _download_batch_data_files(creds, batch_id):
     GCS_STORAGE_BUCKET = "aep-webhook-poc"
+    local_testing = True
 
     url = f"https://platform.adobe.io/data/foundation/export/batches/{batch_id}/files"
  
@@ -207,8 +209,19 @@ def _download_batch_data_files(creds, batch_id):
  
                     print(f"retrieving file status code: {response.status_code}")
 
-                    base_path = "\tmp"
+                    if os.environ.get('GCP_PROJECT'):
+                        base_path = "/tmp"
+                    else:
+                        base_path = r"D:\tmp"
 
-                    with open(os.path.join(base_path,filename), "wb") as f:
+                    file = os.path.join(base_path,filename)
+                    with open(file, "wb") as f:
                         f.write(response.content)
 
+                    ##Copy file written to local storage to gcs
+                    # Cloud Storage Client
+                    storage_client = storage.Client()
+                    bucket_name = GCS_STORAGE_BUCKET
+                    bucket = storage_client.get_bucket(bucket_name)
+                    blob = bucket.blob(filename)
+                    blob.upload_from_filename(file)
