@@ -1,59 +1,30 @@
-from logging import exception
 import functions_framework
-from google.cloud import bigquery
 from google.cloud import storage
+from google.cloud import pubsub_v1
 import json
 import jwt #pyjwt
 import requests
 import os
 import datetime
 import urllib 
+import base64
 
-@functions_framework.http
-def webhook(request):
-    if request.method == 'POST':
-        event = request.json
+# Triggered from a message on a Cloud Pub/Sub topic.
+@functions_framework.cloud_event
+def subscribe(cloud_event):
+    # Print out the data from Pub/Sub, to prove that it worked
+    data = base64.b64decode(cloud_event.data["message"]["data"])
+    print(data)
 
-        PROJECT_ID = 'maximal-symbol-232200'
-        BQ_DATASET = 'webhook'
-        BQ_TABLE = 'event_log'
-        BQ = bigquery.Client()
+    event = json.loads(data)
 
-        ## Re-map the incoming dict/JSON into the BQ event_log structure
-        row = {
-            "event_id": event["event_id"],
-            "recipient_client_id": event.get("recipient_client_id"),
-            "batch_id": event["event"].get("xdm:ingestionId"),
-            "completed": event["event"].get("xdm:completed"),
-            "parent_ingestion_id": event["event"].get("xdm:parentIngestionId"),
-            "dataset_id": event["event"].get("xdm:datasetId"),
-            "event_code": event["event"].get("xdm:eventCode"),
-            "sandbox_name": event["event"].get("xdm:sandboxName"),
-            "successful_records": event["event"].get("xdm:successfulRecords"),
-            "failed_records": event["event"].get("xdm:failedRecords")
-        }
+    sandbox = event.get('sandbox')
+    batch_id = event.get('batch_id')
 
-        table = BQ.dataset(BQ_DATASET).table(BQ_TABLE)
-        errors = BQ.insert_rows_json(table,json_rows=[row])
-        if errors != []:
-            print(errors)
+    creds = _get_access_token(sandbox)
+    print(creds)
+    _download_batch_data_files(creds, batch_id)
 
-        if row.get("event_code") == "ing_load_success":
-            credentials =  _get_access_token(row.get("sandbox_name"))
-            _download_batch_data_files(credentials, row.get("batch_id"))
-            
-        return(event, 200, None)
-    else:
-        request_json = request.get_json(silent=True)
-        request_args = request.args
-
-        ### if there is a challenge query parameter present, then echo that back in the response
-        if request_args and 'challenge' in request_args:
-            response = request_args.get('challenge')
-        else:
-            response = 'Get Successful!'
-        return(response, 200, None)
-        
 def _get_access_token(sandbox_name):
     
     credentials_file = os.path.join(".credentials", "config", "credentials.json")
