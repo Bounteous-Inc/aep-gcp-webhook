@@ -3,17 +3,26 @@ import functions_framework
 from google.cloud import bigquery
 from google.cloud import pubsub_v1
 import json
+import urllib.request
+import os
 
 @functions_framework.http
 def webhook(request):
     if request.method == 'POST':
         event = request.json
 
-        PROJECT_ID = 'maximal-symbol-232200'
-        BQ_DATASET = 'webhook'
-        BQ_TABLE = 'event_log'
+        ##After Python3.7 Google deprecated the GCP_PROJECT env variable, and requires a request to the metadata server to get the project_id.   
+        url = "http://metadata.google.internal/computeMetadata/v1/project/project-id"
+        req = urllib.request.Request(url)
+        req.add_header("Metadata-Flavor", "Google")
+        PROJECT_ID = urllib.request.urlopen(req).read().decode()
+        
+        #Retrieve the BQ and pubsub details from the env variables
+        BQ_DATASET = os.environ.get('BQ_DATASET')
+        BQ_TABLE = os.environ.get('BQ_TABLE')
+        PUBSUB_TOPIC_ID = os.environ.get('PUBSUB_TOPIC')
+
         BQ = bigquery.Client()
-        PUBSUB_TOPIC_ID = "aep-webook"
 
         ## Re-map the incoming dict into the BQ event_log structure
         row = {

@@ -20,10 +20,10 @@ def subscribe(cloud_event):
 
     sandbox = event.get('sandbox')
     batch_id = event.get('batch_id')
+    GCS_STORAGE_BUCKET = os.env.get('GCS_STORAGE_BUCKET')
 
     creds = _get_access_token(sandbox)
-    print(creds)
-    _download_batch_data_files(creds, batch_id)
+    _download_batch_data_files(creds, batch_id, GCS_STORAGE_BUCKET)
 
 def _get_access_token(sandbox_name):
     
@@ -80,10 +80,8 @@ def _get_access_token(sandbox_name):
 
     return creds
 
-def _download_batch_data_files(creds, batch_id):
-    GCS_STORAGE_BUCKET = "aep-webhook-poc"
-    local_testing = True
-
+def _download_batch_data_files(creds, batch_id, bucket_name):
+    
     url = f"https://platform.adobe.io/data/foundation/export/batches/{batch_id}/files"
  
     payload={}
@@ -179,12 +177,9 @@ def _download_batch_data_files(creds, batch_id):
                     response = requests.request("GET", url, headers=headers, data=payload)
  
                     print(f"retrieving file status code: {response.status_code}")
+                    base_path = "/tmp"
 
-                    if os.environ.get('GCP_PROJECT'):
-                        base_path = "/tmp"
-                    else:
-                        base_path = r"D:\tmp"
-
+                    print(f"Download file to {base_path}, filename = {filename}")
                     file = os.path.join(base_path,filename)
                     with open(file, "wb") as f:
                         f.write(response.content)
@@ -192,7 +187,7 @@ def _download_batch_data_files(creds, batch_id):
                     ##Copy file written to local storage to gcs
                     # Cloud Storage Client
                     storage_client = storage.Client()
-                    bucket_name = GCS_STORAGE_BUCKET
                     bucket = storage_client.get_bucket(bucket_name)
                     blob = bucket.blob(filename)
+                    print(f"Uploading {filename} to {bucket_name}")
                     blob.upload_from_filename(file)
