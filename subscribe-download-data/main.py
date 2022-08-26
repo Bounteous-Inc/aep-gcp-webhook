@@ -14,7 +14,6 @@ import base64
 def subscribe(cloud_event):
     # Print out the data from Pub/Sub, to prove that it worked
     data = base64.b64decode(cloud_event.data["message"]["data"])
-    print(data)
 
     event = json.loads(data)
 

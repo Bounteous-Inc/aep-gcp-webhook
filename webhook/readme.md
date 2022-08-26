@@ -1,20 +1,21 @@
-Pre-reqs
+## Pre-requisites 
 
-Create PubSub Topic
+1) Create PubSub Topic
 ```
 gcloud pubsub topics create aep-webook
 ```
 
-Create BQ Table
+[Optional] Create BQ Table
 ```
 bq mk \
   --table \
   webhook.event_log \
    schema.json
 ```
+If you don't want to use the BQ table, make sure and comment out the BQ insert from main.py
 
-Deploy Function
 
+## Deploy function to gcp
 ```
 gcloud beta functions deploy aep-webhook-test \
 --gen2 \
