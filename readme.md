@@ -1,6 +1,6 @@
 # AEP to GCP Pipeline Proof of Concept
 
-This was created for a blog post to illustrate how to use Adobe Experience Platform (AEP) Webhook combined with the PLatform Data Access API to replicate data out of the AEP data lake to Google Cloud (GCP).
+This was created for a blog post to illustrate how to use Adobe Experience Platform (AEP) Webhook combined with the Platform Data Access API to replicate data out of the AEP data lake to Google Cloud (GCP).
 
 Blog Post: [Configuring Automated Data Export in Adobe Experience Platform ](https://www.bounteous.com/insights/2022/10/17/configuring-automated-data-export-adobe-experience-platform)
 
