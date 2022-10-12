@@ -1,4 +1,4 @@
-## Pre-requisites 
+## GCP Pre-requisites 
 
 1) Create PubSub Topic
 ```
@@ -14,7 +14,6 @@ bq mk \
 ```
 If you don't want to use the BQ table, make sure and comment out the BQ insert from main.py
 
-
 ## Deploy function to gcp
 ```
 gcloud beta functions deploy aep-webhook-test \
@@ -26,3 +25,5 @@ gcloud beta functions deploy aep-webhook-test \
 --source . \
 --set-env-vars BQ_DATASET=webhook,BQ_TABLE=event_log,PUBSUB_TOPIC=aep-webook
 ```
+
+Note: this is using the gen2 functions which as of publishing are in beta. Once they are out of beta, the ```glcoud beta``` command line can be swapped out for just ```gcloud```.
